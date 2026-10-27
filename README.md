@@ -1,28 +1,22 @@
-# Project 4: Titanic Tidymodels Shiny App
+# Titanic Survival Predictor
+
+Python/Streamlit implementation of the original Titanic classification project. The app compares logistic regression, k-nearest neighbors, decision tree, random forest, and naive Bayes models.
 
 ## Run the application
 
-Open this folder in RStudio and run:
+Install dependencies and run the app with:
 
-```r
-shiny::runApp()
+```bash
+pip install -r requirements.txt
+streamlit run app.py
 ```
+
+For a command-line model comparison, run `python titanic_analysis.py`.
 
 Click **Fit all models** in the Models tab before viewing comparisons or downloading predictions.
 
-## Render the report
+## Data and evaluation
 
-```r
-quarto::quarto_render("report.qmd")
-```
+The workflow uses an 80/20 stratified train-validation split, median/mode imputation, one-hot encoding, standardized numeric features, and accuracy, precision, recall, F1, and ROC AUC for evaluation.
 
-The report uses `embed-resources: true`, so the HTML output can be submitted as a self-contained file.
-
-## Required packages
-
-```r
-install.packages(c("shiny", "shinydashboard", "tidyverse", "tidymodels",
-                   "janitor", "DT", "ranger", "C50", "kknn", "klaR"))
-```
-
-The `Provided_Tidymodels_Code` folder contains the supplied Midterm Tidymodels examples used as the starting point for this project.
+The original R/Shiny materials are preserved in `legacy_r/` for reference; the primary implementation is Python.
