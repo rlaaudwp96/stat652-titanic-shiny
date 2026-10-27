@@ -19,4 +19,4 @@ Click **Fit all models** in the Models tab before viewing comparisons or downloa
 
 The workflow uses an 80/20 stratified train-validation split, median/mode imputation, one-hot encoding, standardized numeric features, and accuracy, precision, recall, F1, and ROC AUC for evaluation.
 
-The original R/Shiny materials are preserved in `legacy_r/` for reference; the primary implementation is Python.
+The primary implementation is Python, with a Streamlit app for interactive model comparison.
