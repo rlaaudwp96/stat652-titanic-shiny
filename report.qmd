@@ -1,0 +1,145 @@
+---
+title: "Project 4: Agentic Programming and Titanic Survival Prediction"
+author: "Myungje Kim"
+date: today
+format:
+  html:
+    embed-resources: true
+    toc: true
+    code-fold: true
+execute:
+  warning: false
+  message: false
+---
+
+# Project 4 Titanic Survival Prediction
+
+## Project objective
+
+This project uses Agentic Programming to build a Shiny front end for a Tidymodels classification workflow. The goal is to predict whether a Titanic passenger survived. The response variable is binary: `0` means did not survive and `1` means survived.
+
+## How Agentic Programming was used
+
+I used OpenAI Codex as the agentic programming tool. The agent was asked to inspect the existing Tidymodels examples, organize the workflow into a new Shiny application, and create a report. The prompt used was:
+
+> Create a complete R Shiny application for Titanic survival classification using tidymodels. Use a reproducible train/validation split, a recipe for missing-value imputation and categorical predictors, and compare logistic regression, k-nearest neighbors, a decision tree, random forest, and naive Bayes. Display accuracy, precision, recall, F1 score, ROC AUC, ROC curves, confusion matrices, individual passenger predictions, and downloadable test predictions. Also create a Quarto report organized by the five steps of data science and explain how the best model is selected.
+
+The generated code was reviewed and organized into `app.R`. I also checked that identifier variables were not used as predictors and that preprocessing was learned from the training data through a Tidymodels recipe.
+
+### Generated application code
+
+The following chunk includes the complete code generated and edited for the Shiny application. This documents the Agentic Programming output in the report.
+
+```{r}
+cat(readLines("app.R"), sep = "\n")
+```
+
+## Five steps of data science
+
+### Step 1: Collect the data
+
+The data are the Titanic training and test files. The training data contain the known outcome `survived`; the test data are used for final predictions. The training file contains 891 observations and the test file contains 418 observations.
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(janitor)
+
+train_raw <- read_csv("train.csv", show_col_types = FALSE) |> clean_names()
+test_raw <- read_csv("test.csv", show_col_types = FALSE) |> clean_names()
+glimpse(train_raw)
+```
+
+### Step 2: Explore and prepare the data
+
+The variables `name`, `ticket`, and `cabin` are removed. Name and ticket are identifiers or high-cardinality text variables, while cabin has many missing values. The remaining categorical variables are converted to factors. The recipe imputes numeric missing values using the median and nominal missing values using the most frequent level.
+
+```{r}
+train_data <- train_raw |>
+  dplyr::select(-any_of(c("name", "ticket", "cabin"))) |>
+  mutate(
+    survived = factor(survived, levels = c(0, 1)),
+    pclass = factor(pclass), sex = factor(sex), embarked = factor(embarked)
+  )
+
+train_data |> count(survived) |> mutate(proportion = n / sum(n))
+```
+
+```{r}
+ggplot(train_data, aes(survived, fill = survived)) +
+  geom_bar() + theme_minimal() +
+  labs(title = "Titanic survival outcome", x = "Survived", y = "Count")
+```
+
+### Step 3: Train the models
+
+The data are split into 80% training and 20% validation sets using stratification. The same general recipe is used across models. Logistic regression and k-nearest neighbors additionally use dummy variables and normalization because those algorithms require numeric predictors and are sensitive to scale.
+
+```{r}
+set.seed(652)
+split <- initial_split(train_data, prop = 0.80, strata = survived)
+training_data <- training(split)
+validation_data <- testing(split)
+
+base_recipe <- recipe(survived ~ ., data = training_data) |>
+  step_rm(any_of("passenger_id")) |>
+  step_impute_median(all_numeric_predictors()) |>
+  step_impute_mode(all_nominal_predictors())
+```
+
+The five models are logistic regression, k-nearest neighbors, a decision tree, random forest, and naive Bayes. These represent linear, distance-based, tree-based, ensemble, and probabilistic classification approaches.
+
+### Step 4: Evaluate model performance
+
+The primary comparison metric is ROC AUC because it measures discrimination over all possible probability thresholds. Accuracy, precision, recall, and F1 score are also reported so that performance is not judged by a single metric.
+
+```{r}
+# The complete analysis is implemented in app.R. When the Shiny app is run,
+# click “Fit all models” to generate this same comparison interactively.
+metric_definitions <- tibble(
+  Metric = c("Accuracy", "Precision", "Recall", "F1", "ROC AUC"),
+  Meaning = c(
+    "Overall proportion classified correctly",
+    "Among predicted survivors, the proportion who survived",
+    "Among actual survivors, the proportion detected",
+    "Harmonic mean of precision and recall",
+    "Discrimination across probability thresholds"
+  )
+)
+metric_definitions
+```
+
+The validation results produced by the Shiny application are shown below. The same random seed (`652`) and 80/20 stratified split are used each time, so the comparison is reproducible on the same package versions.
+
+```{r}
+validation_results <- tibble::tribble(
+  ~Model, ~Accuracy, ~Precision, ~Recall, ~F1, ~ROC_AUC,
+  "Random Forest", 0.855, 0.864, 0.739, 0.797, 0.9009,
+  "k-Nearest Neighbors", 0.849, 0.839, 0.754, 0.794, 0.8720,
+  "Logistic Regression", 0.810, 0.807, 0.667, 0.730, 0.8480,
+  "Decision Tree", 0.838, 0.823, 0.739, 0.779, 0.8460,
+  "Naive Bayes", 0.771, 0.741, 0.623, 0.677, 0.8240
+)
+validation_results
+```
+
+The Shiny application displays a table of all five metrics, a combined ROC plot, and a confusion matrix for the selected model. The best model is selected as the model with the highest validation ROC AUC. If two models are very close, accuracy, recall, and interpretability should also be considered.
+
+### Step 5: Improve and use the model
+
+After comparing the models, the selected model can be used in two ways: the app can estimate survival for an individual passenger, and it can generate a CSV file containing predictions for every passenger in `test.csv`. The downloaded file contains the passenger ID, predicted class, and predicted probabilities.
+
+## Discussion of results
+
+The Random Forest model was the best model in this run. It achieved the highest validation ROC AUC (0.9009), the highest accuracy (0.855), and the highest precision (0.864). k-Nearest Neighbors had a slightly higher recall (0.754), but its ROC AUC was lower (0.8720). Because ROC AUC was selected as the primary criterion, Random Forest was selected as the final model. Tree-based models often perform well for this dataset because survival depends on nonlinear interactions among sex, passenger class, age, fare, and family variables. Logistic regression remains useful because its effects are easier to explain.
+
+The model should not be interpreted as a causal explanation of survival. It is a predictive model trained on historical passenger records. The validation results estimate predictive performance for similar passengers, but they do not guarantee the same performance on a different population.
+
+## Files produced
+
+- `app.R`: Shiny application.
+- `report.qmd`: this Quarto report.
+- `train.csv`: labeled Titanic training data.
+- `test.csv`: unlabeled Titanic test data.
+- `Provided_Tidymodels_Code/`: supplied Midterm Tidymodels code used as the starting point.
+- The app's Download CSV button creates the final test predictions file.

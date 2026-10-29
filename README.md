@@ -1,22 +1,28 @@
-# Titanic Survival Predictor
+# Titanic Survival Prediction
 
-R/Shiny implementation of a Titanic classification project. The app compares logistic regression, k-nearest neighbors, decision tree, random forest, and naive Bayes models.
+An interactive **R/Shiny** classification app that compares five models for Titanic survival prediction: logistic regression, k-nearest neighbors, decision tree, random forest, and naive Bayes.
 
-## Run the application
+## Run the Shiny app
 
-Install dependencies and run the app with:
+Open the repository in RStudio and run:
 
-```bash
-pip install -r requirements.txt
-streamlit run app.py
+```r
+shiny::runApp()
 ```
 
-For a command-line model comparison, run `python titanic_analysis.py`.
+The workflow uses an 80/20 stratified train-validation split, median/mode imputation, one-hot encoding, and accuracy, precision, recall, F1, and ROC AUC for evaluation. Click **Fit all models** in the Models tab before viewing comparisons or downloading predictions.
 
-Click **Fit all models** in the Models tab before viewing comparisons or downloading predictions.
+## Required R packages
 
-## Data and evaluation
+```r
+install.packages(c("shiny", "shinydashboard", "tidyverse", "tidymodels",
+                   "janitor", "DT", "ranger", "C50", "kknn", "klaR"))
+```
 
-The workflow uses an 80/20 stratified train-validation split, median/mode imputation, one-hot encoding, standardized numeric features, and accuracy, precision, recall, F1, and ROC AUC for evaluation.
+## Repository contents
 
-The primary implementation is R with Shiny for interactive model comparison. A Python conversion is also included as a supplemental reproducible workflow.
+- `app.R` - Primary R/Shiny application
+- `train.csv`, `test.csv` - Titanic training and test data
+- `app.py` - Supplemental Streamlit conversion
+- `titanic_analysis_python.py` - Supplemental Python conversion
+- `requirements.txt` - Python dependencies for the supplemental workflow
